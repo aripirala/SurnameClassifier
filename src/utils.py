@@ -104,9 +104,9 @@ class Vocabulary(object):
         return len(self._token_to_idx)
 
 class SequenceVocabulary(Vocabulary):
-    def __init__(self, token_to_idx=None, unk_token="<UNK>",
-                 mask_token="<MASK>", begin_seq_token="<BEGIN>",
-                 end_seq_token="<END>"):
+    def __init__(self, token_to_idx=None, unk_token="@",
+                 mask_token="_", begin_seq_token="!",
+                 end_seq_token="$"):
         super(SequenceVocabulary, self).__init__(token_to_idx)
 
         self._mask_token = mask_token
@@ -146,113 +146,112 @@ class SequenceVocabulary(Vocabulary):
         else:
             return self._token_to_idx[token]
 
-class ReviewVectorizer(object):
-    """docstring review_ ReviewVectorizer."""
-    def __init__(self, review_vocab, rating_vocab, vector_type='one_hot', max_len=None):
+class SurnameVectorizer(object):
+    """docstring Surname_ SurnameVectorizer."""
+    def __init__(self, surname_vocab, nationality_vocab, vector_type='one_hot', max_len=None):
         """
 
         Args:
-            review_vocab (Vocabulary): maps words to integers
-            rating_vocab (Vocabulary): maps ratings to integers            
+            surname_vocab (SequenceVocabulary): maps words to integers
+            nationality_vocab (Vocabulary): maps ratings to integers            
         """
-        self.review_vocab = review_vocab
-        self.rating_vocab = rating_vocab
+        self.surname_vocab = surname_vocab
+        self.nationality_vocab = nationality_vocab
         self.max_len = max_len
         self.vector_type = vector_type
     
-    def vectorize(self, review):
-        """Create a collapsed one-hot code vector fo the review
+    def vectorize(self, surname):
+        """Create a collapsed one-hot code vector fo the surname
 
         Args:
-            review (str): the review in the str format
+            surname (str): the surname in the str format
         Returns:
             one_hot (np.ndarray): collapsed one-hot encoding
         """
 
         if self.vector_type == 'one_hot':
-            return self.vectorize_onehot(review)
+            return self.vectorize_onehot(surname)
         
-        return self.vectorize_embedding(review)
+        return self.vectorize_embedding(surname)
         
-    def vectorize_embedding(self, review):
-        """Create a collapsed one-hot code vector fo the review
+    def vectorize_embedding(self, surname):
+        """Create a collapsed one-hot code vector fo the surname
 
         Args:
-            review (str): the review in the str format
+            surname (str): the surname in the str format
         Returns:
             token_ids (np.array): np array of indices of the tokens in the vocab
         """
         token_ids = np.zeros(self.max_len, dtype=np.int64)
-        token_ids.fill(self.review_vocab.mask_index)
+        token_ids.fill(self.surname_vocab.mask_index)
 
-        token_ids[0]= self.review_vocab.begin_seq_index # add index for begin seq
+        token_ids[0]= self.surname_vocab.begin_seq_index # add index for begin seq
 
-        for id, token in enumerate(review.split(" ")):
+        for id, token in enumerate(surname):
             if id+1 >= self.max_len-1:
                 break
-            index = self.review_vocab.lookup_token(token) # get index for the token from the vocab class
+            index = self.surname_vocab.lookup_token(token) # get index for the token from the vocab class
             token_ids[id+1] = index
-        token_ids[id+1] = self.review_vocab.end_seq_index
-        len_vector = id+2 # length of review vector including begin and end tokens
+        token_ids[id+1] = self.surname_vocab.end_seq_index
+        len_vector = id+2 # length of surname vector including begin and end tokens
         return token_ids, len_vector
     
-    def vectorize_onehot(self, review):
+    def vectorize_onehot(self, surname):
         #TODO: need to refactor to handle new SequenceVocabulary Class
 
-        """Create a collapsed one-hot code vector fo the review
+        """Create a collapsed one-hot code vector fo the surname
 
         Args:
-            review (str): the review in the str format
+            surname (str): the surname in the str format
         Returns:
             one_hot (np.ndarray): collapsed one-hot encoding
         """
-        one_hot = np.zeros(len(self.review_vocab), dtype=np.float32)
+        one_hot = np.zeros(len(self.surname_vocab), dtype=np.float32)
 
-        for token in review.split(" "):
-            index = self.review_vocab.lookup_token(token) # get index for the token from the vocab class
+        for token in surname:
+            index = self.surname_vocab.lookup_token(token) # get index for the token from the vocab class
             one_hot[index] = 1
-        return one_hot
+        return one_hot, len(self.surname_vocab)
     
 
     @classmethod
-    def from_dataframe(cls, review_df, cutoff=25, vector_type='one_hot', max_len=None):
+    def from_dataframe(cls, surnames_df, cutoff=25, vector_type='one_hot', max_len=None):
         """
-        Instantiate the vectorizer from the review pandas dataframe
+        Instantiate the vectorizer from the surname pandas dataframe
 
-        :param review_df (pandas df): the review dataset
+        :param surname_df (pandas df): the surname dataset
         :param cutoff (int): the parameter that controls the threshold for the token to be added to the vocab
         :return:
         """
 
-        review_vocab = SequenceVocabulary()
-        rating_vocab = Vocabulary()
+        surname_vocab = SequenceVocabulary()
+        nationality_vocab = Vocabulary()
 
         # Add ratings
-        for rating in sorted(set(review_df.rating)):
-            rating_vocab.add_token(rating)
+        for nationality in sorted(set(surnames_df.nationality)):
+            nationality_vocab.add_token(nationality)
 
-        # Add words that meet the cutoff to the review vocab
-        word_counter = Counter()
+        # Add words that meet the cutoff to the surname vocab
+        char_counter = Counter()
         if max_len is None:
-            max_review_len = 0
-        for review in review_df.review:
-            review_list = review.split(" ")
-            review_len = len(review_list)
+            max_surname_len = 0
+        for surname in surnames_df.surname:
+            # review_list = review.split(" ")
+            surname_len = len(surname)
             if max_len is None:
-                if max_review_len < review_len:
-                    max_review_len = review_len
-            for word in review_list:
-                if word not in string.punctuation:
-                    word_counter[word] += 1
+                if max_surname_len < surname_len:
+                    max_surname_len = surname_len
+            for char in surname:
+                if char not in string.punctuation:
+                    char_counter[char] += 1
         if max_len is None:
-            max_len = max_review_len + 2
-             # adjust the max len to add both begin and end seq tokens to the review
-        for word, count in word_counter.items():
+            max_len = max_surname_len + 2
+             # adjust the max len to add both begin and end seq tokens to the surname
+        for char, count in char_counter.items():
             if count >= cutoff:
-                review_vocab.add_token(word)
+                surname_vocab.add_token(char)
 
-
-        return cls(review_vocab, rating_vocab, vector_type, max_len)
+        return cls(surname_vocab, nationality_vocab, vector_type, max_len)
 
     def to_serializable(self):
         """
@@ -262,28 +261,28 @@ class ReviewVectorizer(object):
         """
 
         return {
-            'review_vocab': self.review_vocab.to_serializable(),
-            'rating_vocab': self.rating_vocab.to_serializable(),
+            'surname_vocab': self.surname_vocab.to_serializable(),
+            'nationality_vocab': self.nationality_vocab.to_serializable(),
             'vector_type':self.vector_type,
             'max_len': self.max_len,
         }
 
     @classmethod
     def from_serializable(cls, contents):
-        """Instantiate a ReviewVectorizer from a serializable dictionary
+        """Instantiate a SurnameVectorizer from a serializable dictionary
 
         Args:
             contents (dict): the serializable dictionary
         Returns:
-            an instance of the ReviewVectorizer class
+            an instance of the SurnameVectorizer class
         """
 
-        review_vocab = SequenceVocabulary.from_serializable(contents['review_vocab'])
-        rating_vocab = Vocabulary.from_serializable(contents['rating_vocab'])
+        surname_vocab = SequenceVocabulary.from_serializable(contents['surname_vocab'])
+        nationality_vocab = Vocabulary.from_serializable(contents['nationality_vocab'])
         vector_type = contents['vector_type']
         max_len = contents['max_len']
 
-        return cls(review_vocab, rating_vocab, vector_type, max_len)
+        return cls(surname_vocab, nationality_vocab, vector_type, max_len)
 
     @staticmethod
     def load_vectorizer_only(vectorizer_pth):
@@ -297,20 +296,20 @@ class ReviewVectorizer(object):
 
     @classmethod
     def from_serializable_and_json(cls, vectorizer_pth):
-        """Instantiate a ReviewVectorizer from a serializable dictionary
+        """Instantiate a SurnameVectorizer from a serializable dictionary
 
         Args:
             contents (dict): the serializable dictionary
         Returns:
-            an instance of the ReviewVectorizer class
+            an instance of the SurnameVectorizer class
         """
         vectorizer_dict = cls.load_vectorizer_only(vectorizer_pth)
-        review_vocab = SequenceVocabulary.from_serializable(vectorizer_dict['review_vocab'])
-        rating_vocab = Vocabulary.from_serializable(vectorizer_dict['rating_vocab'])
+        surname_vocab = SequenceVocabulary.from_serializable(vectorizer_dict['surname_vocab'])
+        nationality_vocab = Vocabulary.from_serializable(vectorizer_dict['nationality_vocab'])
         vector_type = vectorizer_dict['vector_type']
         max_len = vectorizer_dict['max_len']
 
-        return cls(review_vocab, rating_vocab, vector_type, max_len)
+        return cls(surname_vocab, nationality_vocab, vector_type, max_len)
 
 def generate_batches(dataset, batch_size, shuffle=True,
                      drop_last=True, device="cpu"):
@@ -383,9 +382,14 @@ def update_train_state(args, model, train_state):
 
     return train_state
 
-def compute_accuracy(y_pred, y_target):
+def compute_accuracy(y_pred, y_target, output_type='one_class'):
     y_target = y_target.cpu()
-    y_pred_indices = (torch.sigmoid(y_pred)>0.5).cpu().long()#.max(dim=1)[1]
+    y_pred = y_pred.cpu()
+
+    if output_type=='one_class':
+        y_pred_indices = (torch.sigmoid(y_pred)>0.5).long()#.max(dim=1)[1]
+    else:
+        y_pred_indices = torch.argmax(y_pred, dim=1)
     n_correct = torch.eq(y_pred_indices, y_target).sum().item()
     return n_correct / len(y_pred_indices) * 100
 

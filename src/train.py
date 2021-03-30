@@ -5,9 +5,9 @@ import torch.nn as nn
 import torch.optim as optim
 
 from configs import args
-from dataset import ReviewDataset
+from dataset import SurnameDataset
 
-from model import ReviewPerceptronClassifier
+from model import SurnamePerceptronClassifier
 from tqdm import tqdm
 
 from utils import set_seed_everywhere, handle_dirs, make_train_state, \
@@ -38,30 +38,14 @@ if __name__ == '__main__':
 
     set_seed_everywhere(args.seed, args.cuda)
 
-    #Initializations
-
-    # if args.reload_from_files:
-    #     # training from a checkpoint
-    #     print("Loading dataset and vectorizer")
-    #     dataset = ReviewDataset.load_dataset_and_load_vectorizer(args.review_csv,
-    #                                                              args.vectorizer_file)
-    # else:
-    #     print("Loading dataset and creating vectorizer")
-    #     # create dataset and vectorizer
-    #     dataset = ReviewDataset.load_dataset_and_make_vectorizer(args.review_csv)
-    #     dataset.save_vectorizer(args.vectorizer_file)
-
-    # vectorizer = dataset.get_vectorizer()
-
-    # classifier = ReviewPerceptronClassifier(num_features=len(vectorizer.review_vocab), num_classes=1)
-
+    
     dataset = args.dataset
     vectorizer = args.vectorizer
     classifier = args.classifier
 
     classifier = classifier.to(args.device)
 
-    loss_func = nn.BCEWithLogitsLoss()
+    loss_func = nn.CrossEntropyLoss()
     optimizer = optim.Adam(classifier.parameters(), lr=args.learning_rate)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer,
                                                      mode='min', factor=0.5,
@@ -124,7 +108,7 @@ if __name__ == '__main__':
                     # print(f'y_pred shape is {y_pred.size()}')
                     # print(f'y_true shape is {y_true.size()}')
 
-                    loss = loss_func(y_pred, batch_dict['y_target'].float())
+                    loss = loss_func(y_pred, y_true)
                     loss_t = loss.item()
                     running_loss += (loss_t - running_loss) / (batch_index + 1)
 
@@ -135,7 +119,7 @@ if __name__ == '__main__':
                     optimizer.step()
                     # -----------------------------------------
                     # compute the accuracy
-                    acc_t = compute_accuracy(y_pred, batch_dict['y_target'])
+                    acc_t = compute_accuracy(y_pred, batch_dict['y_target'], output_type=args.output_type)
                     running_acc += (acc_t - running_acc) / (batch_index + 1)
 
                     # update bar
@@ -166,12 +150,12 @@ if __name__ == '__main__':
                         y_pred = classifier(x_in=batch_dict['x_data'].float())
                     
                     # step 3. compute the loss
-                    loss = loss_func(y_pred, batch_dict['y_target'].float())
+                    loss = loss_func(y_pred, batch_dict['y_target'])
                     loss_t = loss.item()
                     running_loss += (loss_t - running_loss) / (batch_index + 1)
 
                     # compute the accuracy
-                    acc_t = compute_accuracy(y_pred, batch_dict['y_target'])
+                    acc_t = compute_accuracy(y_pred, batch_dict['y_target'], output_type=args.output_type)
                     running_acc += (acc_t - running_acc) / (batch_index + 1)
 
                     val_bar.set_postfix(loss=running_loss,
@@ -227,7 +211,7 @@ if __name__ == '__main__':
         running_loss += (loss_t - running_loss) / (batch_index + 1)
 
         # compute the accuracy
-        acc_t = compute_accuracy(y_pred, batch_dict['y_target'])
+        acc_t = compute_accuracy(y_pred, batch_dict['y_target'], output_type=args.output_type)
         running_acc += (acc_t - running_acc) / (batch_index + 1)
         
         test_bar.set_postfix(loss=running_loss,

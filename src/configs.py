@@ -4,23 +4,24 @@
 
 import os
 from argparse import Namespace
-from model import ReviewMLPClassifier, ReviewPerceptronClassifier, ReviewMLP_Embed_Classifier, ReviewCNN_Embed_Classifier, ReviewRNN_Embed_Classifier
-from dataset import ReviewDataset
+from model import SurnameMLPClassifier, SurnamePerceptronClassifier, SurnameMLP_Embed_Classifier, SurnameCNN_Embed_Classifier, SurnameRNN_Embed_Classifier
+from dataset import SurnameDataset
 from torch.nn.modules.dropout import Dropout
 from utils import handle_dirs
 
 args = Namespace(
     # Data and Path information
     frequency_cutoff=25,
-    model_state_file='model_embed_gru_len200.pth',
-    review_csv='../input/reviews_with_splits_lite.csv',
+    model_state_file='model_perceptron.pth',
+    data_csv='../input/surnames_with_splits.csv',
     # review_csv='data/yelp/reviews_with_splits_full.csv',
-    save_dir='../experiment/embedding_rnn/',
+    save_dir='../experiment/Perceptron/',
     vectorizer_file='vectorizer.json',
     classifier=None,
     vectorizer = None,
     dataset=None,
     architecture_type=None,
+    output_type='multi_class',
     # No Model hyper parameters
     # Training hyper parameters
     batch_size=32,
@@ -30,14 +31,14 @@ args = Namespace(
     seed=1337,
     # Runtime options
     catch_keyboard_interrupt=True,
-    cuda=True,
+    cuda=False,
     expand_filepaths_to_save_dir=True,
     reload_from_files=False,
     train=True, # Flag to train your network
     # If embedding layer is used
-    max_len = 200,
-    vector_type='embedding',
-    embedding_type = 'pre-trained',
+    max_len = 15,
+    vector_type='one_hot',
+    embedding_type = 'train', #'pre-trained',
     embedding_file_name= '../input/glove.6B.50d.txt',
     embedding_dim=50
 )
@@ -48,12 +49,12 @@ vectorizer_pth = os.path.join(args.save_dir, args.vectorizer_file)
 if args.reload_from_files:
         # training from a checkpoint
         print("Loading dataset and vectorizer")        
-        dataset = ReviewDataset.load_dataset_and_load_vectorizer(args.review_csv,
+        dataset = SurnameDataset.load_dataset_and_load_vectorizer(args.data_csv,
                                                                  vectorizer_pth)
 else:
         print("Loading dataset and creating vectorizer")
         # create dataset and vectorizer
-        dataset = ReviewDataset.load_dataset_and_make_vectorizer(args.review_csv, 
+        dataset = SurnameDataset.load_dataset_and_make_vectorizer(args.data_csv, 
                                                                 args.vector_type, 
                                                                 args.max_len)
         dataset.save_vectorizer(vectorizer_pth)
@@ -61,7 +62,9 @@ else:
 vectorizer = dataset.get_vectorizer()
 
 
-# classifier = ReviewPerceptronClassifier(num_features=len(vectorizer.review_vocab), num_classes=1)
+classifier = SurnamePerceptronClassifier(num_features=len(vectorizer.surname_vocab), num_classes=len(vectorizer.nationality_vocab))
+args.architecture_type = 'Perceptron'
+
 # classifier = ReviewMLPClassifier(num_features=len(vectorizer.review_vocab), num_classes=1, hidden_layer_dim=[100])
 # classifier = ReviewMLP_Embed_Classifier(num_features=len(vectorizer.review_vocab), num_classes=1, hidden_layer_dim=[100, 50],
 #                 embedding_file_name=args.embedding_file_name, embedding_dim=50,  
@@ -75,11 +78,11 @@ vectorizer = dataset.get_vectorizer()
 #                 freeze=False, batch_norm=True, dropout=True, max_pool=True, activation_fn='ELU')
 # args.architecture_type = 'CNN'
 
-classifier = ReviewRNN_Embed_Classifier(num_features=len(vectorizer.review_vocab), num_classes=1, rnn_hidden_size=200,
-                embedding_file_name=args.embedding_file_name, embedding_dim=args.embedding_dim,  
-                word_to_index=vectorizer.review_vocab._token_to_idx, max_idx=len(vectorizer.review_vocab),
-                freeze=True, batch_norm=True, dropout=True, activation_fn='RELU')
-args.architecture_type = 'RNN'
+# classifier = ReviewRNN_Embed_Classifier(num_features=len(vectorizer.review_vocab), num_classes=1, rnn_hidden_size=200,
+#                 embedding_file_name=args.embedding_file_name, embedding_dim=args.embedding_dim,  
+#                 word_to_index=vectorizer.review_vocab._token_to_idx, max_idx=len(vectorizer.review_vocab),
+#                 freeze=True, batch_norm=True, dropout=True, activation_fn='RELU')
+# args.architecture_type = 'RNN'
 
 
 args.classifier = classifier
@@ -88,26 +91,26 @@ args.dataset = dataset
 
 if __name__== '__main__':
     # print(args)
-    review_dataset = args.dataset
+    surname_dataset = args.dataset
     # print(args.dataset._lookup_dict)
-    train_dataset = review_dataset 
+    train_dataset = surname_dataset 
     print(f'Training dataset has {len(train_dataset)}')
     print('First five items are --')
     for i in range(5):
         x, y = train_dataset[i]['x_data'], train_dataset[i]['y_target']
         print(f'data {i+1}...\n\t{x}\n\t{y}')
 
-    review_dataset.set_split('val')
-    print(f'Validation dataset has {len(review_dataset)}')
+    surname_dataset.set_split('val')
+    print(f'Validation dataset has {len(surname_dataset)}')
     print('Two items are --')
     for i in range(2):
-        x, y = review_dataset[i]['x_data'], review_dataset[i]['y_target']
+        x, y = surname_dataset[i]['x_data'], surname_dataset[i]['y_target']
         print(f'data {i+1}...\n\t{x}\n\t{y}')
 
-    review_dataset.set_split('train')
-    print(f'Training dataset has {len(review_dataset)}')
+    surname_dataset.set_split('train')
+    print(f'Training dataset has {len(surname_dataset)}')
 
-    review_dataset.set_split('test')
-    print(f'Test dataset has {len(review_dataset)}')
+    surname_dataset.set_split('test')
+    print(f'Test dataset has {len(surname_dataset)}')
 
     

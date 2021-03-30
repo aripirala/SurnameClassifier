@@ -12,9 +12,9 @@ from utils import column_gather
 
 
 
-class ReviewPerceptronClassifier(nn.Module):
+class SurnamePerceptronClassifier(nn.Module):
     def __init__(self, num_features, num_classes):
-        super(ReviewPerceptronClassifier, self).__init__()
+        super(SurnamePerceptronClassifier, self).__init__()
         self.fc1 = nn.Linear(num_features, num_classes)
 
     def forward(self, x_in, apply_sigmoid=False):
@@ -24,9 +24,9 @@ class ReviewPerceptronClassifier(nn.Module):
 
         return logits
 
-class ReviewMLPClassifier(nn.Module):
+class SurnameMLPClassifier(nn.Module):
     def __init__(self, num_features, num_classes, hidden_layer_dim=None, activation_fn = 'RELU'):
-        super(ReviewMLPClassifier, self).__init__()
+        super(SurnameMLPClassifier, self).__init__()
         # self.fc1 = nn.Linear(num_features, num_classes)
         layers = []
         input_features = num_features
@@ -94,12 +94,12 @@ class Embedding:
 
         return embed_mat
     
-class ReviewMLP_Embed_Classifier(Embedding, nn.Module):
+class SurnameMLP_Embed_Classifier(Embedding, nn.Module):
     def __init__(self, num_features, num_classes, hidden_layer_dim=None, activation_fn = 'RELU', 
                     embedding_dim=100, embedding_type='pre-trained', embedding_file_name=None, 
                     word_to_index=None, max_idx=1000, freeze=True, **kwargs):
         
-        super(ReviewMLP_Embed_Classifier, self).__init__(num_features=num_features, embedding_dim=embedding_dim, 
+        super(SurnameMLP_Embed_Classifier, self).__init__(num_features=num_features, embedding_dim=embedding_dim, 
                     embedding_type=embedding_type, embedding_file_name=embedding_file_name, 
                     word_to_index=word_to_index, max_idx=max_idx, freeze=freeze, **kwargs)
         
@@ -136,12 +136,12 @@ class ReviewMLP_Embed_Classifier(Embedding, nn.Module):
         return logits
 
 
-class ReviewCNN_Embed_Classifier(Embedding, nn.Module):
+class SurnameCNN_Embed_Classifier(Embedding, nn.Module):
     def __init__(self, num_features, num_classes, channel_list, activation_fn = 'RELU', max_pool=False,
                     embedding_dim=100, embedding_type=None, embedding_file_name=None, 
                     word_to_index=None, max_idx=1000, freeze=True, batch_norm=False, dropout=False, **kwargs):
 
-        super(ReviewCNN_Embed_Classifier, self).__init__(num_features=num_features, embedding_dim=embedding_dim, 
+        super(SurnameCNN_Embed_Classifier, self).__init__(num_features=num_features, embedding_dim=embedding_dim, 
                     embedding_type=embedding_type, embedding_file_name=embedding_file_name, 
                     word_to_index=word_to_index, max_idx=max_idx, freeze=freeze, **kwargs)
         
@@ -192,12 +192,12 @@ class ReviewCNN_Embed_Classifier(Embedding, nn.Module):
         return logits
 
 
-class ReviewRNN_Embed_Classifier(Embedding, nn.Module):
+class SurnameRNN_Embed_Classifier(Embedding, nn.Module):
     def __init__(self, num_features, num_classes, rnn_hidden_size, activation_fn = 'RELU', 
                     embedding_dim=100, embedding_type=None, embedding_file_name=None, 
                     word_to_index=None, max_idx=1000, freeze=True, batch_norm=False, batch_first=True, dropout=False, **kwargs):
 
-        super(ReviewRNN_Embed_Classifier, self).__init__(num_features=num_features, embedding_dim=embedding_dim, 
+        super(SurnameRNN_Embed_Classifier, self).__init__(num_features=num_features, embedding_dim=embedding_dim, 
                     embedding_type=embedding_type, embedding_file_name=embedding_file_name, 
                     word_to_index=word_to_index, max_idx=max_idx, freeze=freeze, **kwargs)
         
@@ -249,9 +249,7 @@ class ReviewRNN_Embed_Classifier(Embedding, nn.Module):
             logits = torch.sigmoid(logits)
         return logits
 
-
-
 if __name__ == '__main__':
     rnn_hidden_size = 200
-    RnnClassifier = ReviewRNN_Embed_Classifier(200, 1, rnn_hidden_size)
-    print(RnnClassifier)
+    RNNClassifier = SurnameRNN_Embed_Classifier(200, 1, rnn_hidden_size)
+    print(RNNClassifier)

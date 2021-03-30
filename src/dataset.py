@@ -1,4 +1,4 @@
-from utils import Vocabulary, ReviewVectorizer
+from utils import Vocabulary, SurnameVectorizer
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,23 +9,23 @@ import json
 # import configs
 
 
-class ReviewDataset:
-    def __init__(self, review_df, vectorizer):
+class SurnameDataset:
+    def __init__(self, surnames_df, vectorizer):
         """
 
         :param review_df (pandas Dataframe): the dataset containing the reviews and rating
         :param vectorizer (ReviewVectorizer): vectorizer instantiated from dataset
         """
-        self.review_df = review_df
+        self.surnames_df = surnames_df
         self.vectorizer = vectorizer
 
-        self.train_df = self.review_df[self.review_df.split=='train']
+        self.train_df = self.surnames_df[self.surnames_df.split=='train']
         self.train_size = len(self.train_df)
 
-        self.val_df = self.review_df[self.review_df.split == 'val']
+        self.val_df = self.surnames_df[self.surnames_df.split == 'val']
         self.val_size = len(self.val_df)
 
-        self.test_df = self.review_df[self.review_df.split == 'test']
+        self.test_df = self.surnames_df[self.surnames_df.split == 'test']
         self.test_size = len(self.test_df)
 
         self._lookup_dict = {
@@ -37,31 +37,31 @@ class ReviewDataset:
         self.set_split('train')
 
     @classmethod
-    def load_dataset_and_make_vectorizer(cls, review_csv, vector_type='one_hot', max_len=None):
+    def load_dataset_and_make_vectorizer(cls, surnames_csv, vector_type='one_hot', max_len=None):
         """Load dataset and make a new vectorizer from scratch
 
-        :param review_csv (str): location of dataset
+        :param surnames_csv (str): location of dataset
         :return:
-            An instance of ReviewDataset
+            An instance of SurnamesDataset
         """
-        review_df = pd.read_csv(review_csv)
-        train_review_df = review_df[review_df.split=='train']
-        vectorizer = ReviewVectorizer.from_dataframe(train_review_df, vector_type=vector_type, max_len=max_len)
+        surnames_df = pd.read_csv(surnames_csv)
+        train_surnames_df = surnames_df[surnames_df.split=='train']
+        vectorizer = SurnameVectorizer.from_dataframe(train_surnames_df, vector_type=vector_type, max_len=max_len)
         print(f'Vectorizer created')
-        return cls(review_df, vectorizer)
+        return cls(surnames_df, vectorizer)
 
     @classmethod
-    def load_dataset_and_load_vectorizer(cls, review_csv, vectorizer_pth):
+    def load_dataset_and_load_vectorizer(cls, surnames_csv, vectorizer_pth):
         """
 
-        :param review_csv (str): location of the dataset
+        :param surnames_csv (str): location of the dataset
         :param vectorizer_pth (str): location of the serialized vectorizer
-        :return: An instance of ReviewDataset
+        :return: An instance of SurnameDataset
         """
-        review_df = pd.read_csv(review_csv)
+        surnames_df = pd.read_csv(surnames_csv)
         vectorizer = cls.load_vectorizer_only(vectorizer_pth)
 
-        return cls(review_df, vectorizer)
+        return cls(surnames_df, vectorizer)
 
     @staticmethod
     def load_vectorizer_only(vectorizer_pth):
@@ -71,7 +71,7 @@ class ReviewDataset:
         :return:
         """
         with open(vectorizer_pth, 'r') as fp:
-            return ReviewVectorizer.from_serializable(json.load(fp))
+            return SurnameVectorizer.from_serializable(json.load(fp))
 
     def save_vectorizer(self, vectorizer_filepath):
         """
@@ -115,12 +115,12 @@ class ReviewDataset:
 
         # print(f'row is {row}')
 
-        review_vector, vector_len = self.vectorizer.vectorize(row.review)
-        rating_index = self.vectorizer.rating_vocab.lookup_token(row.rating)
+        surname_vector, vector_len = self.vectorizer.vectorize(row.surname)
+        nationality_index = self.vectorizer.nationality_vocab.lookup_token(row.nationality)
 
         return {
-            'x_data': review_vector,
-            'y_target': rating_index,
+            'x_data': surname_vector,
+            'y_target': nationality_index,
             'vector_len': vector_len
         }
 
@@ -135,29 +135,30 @@ class ReviewDataset:
         return len(self) // batch_size
 
 if __name__ == '__main__':
-    file_path = '../input/reviews_with_splits_lite.csv'
+    file_path = '../input/surnames_with_splits.csv'
     print(f'file path is {file_path}')
-    review_dataset = ReviewDataset.load_dataset_and_make_vectorizer(file_path, vector_type='embedding', max_len=100)
-    train_dataset = review_dataset
+    surname_dataset = SurnameDataset.load_dataset_and_make_vectorizer(file_path, vector_type='embedding', max_len=25)
+    train_dataset = surname_dataset
     print(f'max_len is {train_dataset.vectorizer.max_len}')
     print(f'Training dataset has {len(train_dataset)}')
     print('First five items are --')
     for i in range(5):
-        x, y, review_len = train_dataset[i]['x_data'], train_dataset[i]['y_target'], train_dataset[i]['vector_len'] 
-        print(f'data {i+1}...\n\t{x}\ntarget -\t{y}\nreview_length -\t{review_len}')
+        x, y, surname_len = train_dataset[i]['x_data'], train_dataset[i]['y_target'], train_dataset[i]['vector_len'] 
+        print(f'data {i+1}...\n\t{x}\ntarget -\t{y}\nsurname_length -\t{surname_len}')
 
-    review_dataset.set_split('val')
-    print(f'Validation dataset has {len(review_dataset)}')
+    surname_dataset.set_split('val')
+    print(f'Validation dataset has {len(surname_dataset)}')
     print('Two items are --')
     for i in range(2):
-        x, y = review_dataset[i]['x_data'], review_dataset[i]['y_target']
+        x, y = surname_dataset[i]['x_data'], surname_dataset[i]['y_target']
         print(f'data {i+1}...\n\t{x}\n\t{y}')
 
-    review_dataset.set_split('train')
-    print(f'Training dataset has {len(review_dataset)}')
+    surname_dataset.set_split('train')
+    print(f'Training dataset has {len(surname_dataset)}')
 
-    review_dataset.set_split('test')
-    print(f'Test dataset has {len(review_dataset)}')
+    surname_dataset.set_split('test')
+    print(f'Test dataset has {len(surname_dataset)}')
 
-
+    word_idx = surname_dataset.vectorizer.nationality_vocab._token_to_idx
+    print(word_idx)
 
