@@ -12,10 +12,10 @@ from utils import handle_dirs
 args = Namespace(
     # Data and Path information
     frequency_cutoff=25,
-    model_state_file='model_perceptron.pth',
+    model_state_file='model_mlp.pth',
     data_csv='../input/surnames_with_splits.csv',
     # review_csv='data/yelp/reviews_with_splits_full.csv',
-    save_dir='../experiment/Perceptron/',
+    save_dir='../experiment/MLP/',
     vectorizer_file='vectorizer.json',
     classifier=None,
     vectorizer = None,
@@ -62,15 +62,16 @@ else:
 vectorizer = dataset.get_vectorizer()
 
 
-classifier = SurnamePerceptronClassifier(num_features=len(vectorizer.surname_vocab), num_classes=len(vectorizer.nationality_vocab))
-args.architecture_type = 'Perceptron'
+# classifier = SurnamePerceptronClassifier(num_features=len(vectorizer.surname_vocab), num_classes=len(vectorizer.nationality_vocab))
+# args.architecture_type = 'Perceptron'
 
-# classifier = ReviewMLPClassifier(num_features=len(vectorizer.review_vocab), num_classes=1, hidden_layer_dim=[100])
+classifier = SurnameMLPClassifier(num_features=len(vectorizer.surname_vocab), num_classes=len(vectorizer.nationality_vocab), hidden_layer_dim=[200, 100])
+
 # classifier = ReviewMLP_Embed_Classifier(num_features=len(vectorizer.review_vocab), num_classes=1, hidden_layer_dim=[100, 50],
 #                 embedding_file_name=args.embedding_file_name, embedding_dim=50,  
 #                 word_to_index=vectorizer.review_vocab._token_to_idx, max_idx=len(vectorizer.review_vocab),
 #                 freeze=False)
-# args.architecture_type = 'MLP'
+args.architecture_type = 'MLP'
 
 # classifier = ReviewCNN_Embed_Classifier(num_features=len(vectorizer.review_vocab), num_classes=1, channel_list=[100, 200, 400],
 #                 embedding_file_name=args.embedding_file_name, embedding_dim=args.embedding_dim,  

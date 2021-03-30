@@ -206,7 +206,7 @@ if __name__ == '__main__':
             y_pred = classifier(x_in=batch_dict['x_data'].float())
     
         # compute the loss
-        loss = loss_func(y_pred, batch_dict['y_target'].float())
+        loss = loss_func(y_pred, batch_dict['y_target'])
         loss_t = loss.item()
         running_loss += (loss_t - running_loss) / (batch_index + 1)
 
