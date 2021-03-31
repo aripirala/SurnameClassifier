@@ -12,10 +12,9 @@ from utils import handle_dirs
 args = Namespace(
     # Data and Path information
     frequency_cutoff=25,
-    model_state_file='model_mlp.pth',
+    model_state_file='model_rnn_embed20_1.pth',
     data_csv='../input/surnames_with_splits.csv',
-    # review_csv='data/yelp/reviews_with_splits_full.csv',
-    save_dir='../experiment/MLP/',
+    save_dir='../experiment/RNN/',
     vectorizer_file='vectorizer.json',
     classifier=None,
     vectorizer = None,
@@ -27,7 +26,7 @@ args = Namespace(
     batch_size=32,
     early_stopping_criteria=5,
     learning_rate=0.001,
-    num_epochs=10,
+    num_epochs=25,
     seed=1337,
     # Runtime options
     catch_keyboard_interrupt=True,
@@ -37,10 +36,10 @@ args = Namespace(
     train=True, # Flag to train your network
     # If embedding layer is used
     max_len = 15,
-    vector_type='one_hot',
+    vector_type='embedding', # 'one_hot'
     embedding_type = 'train', #'pre-trained',
     embedding_file_name= '../input/glove.6B.50d.txt',
-    embedding_dim=50
+    embedding_dim=20
 )
 # handle dirs
 handle_dirs(args.save_dir)
@@ -65,25 +64,28 @@ vectorizer = dataset.get_vectorizer()
 # classifier = SurnamePerceptronClassifier(num_features=len(vectorizer.surname_vocab), num_classes=len(vectorizer.nationality_vocab))
 # args.architecture_type = 'Perceptron'
 
-classifier = SurnameMLPClassifier(num_features=len(vectorizer.surname_vocab), num_classes=len(vectorizer.nationality_vocab), hidden_layer_dim=[200, 100])
+# classifier = SurnameMLPClassifier(num_features=len(vectorizer.surname_vocab), num_classes=len(vectorizer.nationality_vocab), hidden_layer_dim=[200, 100])
 
-# classifier = ReviewMLP_Embed_Classifier(num_features=len(vectorizer.review_vocab), num_classes=1, hidden_layer_dim=[100, 50],
+# classifier = SurnameMLP_Embed_Classifier(num_features=len(vectorizer.surname_vocab), num_classes=1, hidden_layer_dim=[100, 50],
 #                 embedding_file_name=args.embedding_file_name, embedding_dim=50,  
-#                 word_to_index=vectorizer.review_vocab._token_to_idx, max_idx=len(vectorizer.review_vocab),
+#                 word_to_index=vectorizer.surname_vocab._token_to_idx, max_idx=len(vectorizer.surname_vocab),
 #                 freeze=False)
-args.architecture_type = 'MLP'
+# args.architecture_type = 'MLP'
 
-# classifier = ReviewCNN_Embed_Classifier(num_features=len(vectorizer.review_vocab), num_classes=1, channel_list=[100, 200, 400],
-#                 embedding_file_name=args.embedding_file_name, embedding_dim=args.embedding_dim,  
-#                 word_to_index=vectorizer.review_vocab._token_to_idx, max_idx=len(vectorizer.review_vocab),
+# classifier = SurnameCNN_Embed_Classifier(num_features=len(vectorizer.surname_vocab), 
+#                 num_classes=len(vectorizer.nationality_vocab), channel_list=[100, 200],
+#                 embedding_file_name=args.embedding_file_name, embedding_dim=args.embedding_dim,
+#                 embedding_type = args.embedding_type,  
+#                 word_to_index=vectorizer.surname_vocab._token_to_idx, max_idx=len(vectorizer.surname_vocab),
 #                 freeze=False, batch_norm=True, dropout=True, max_pool=True, activation_fn='ELU')
 # args.architecture_type = 'CNN'
 
-# classifier = ReviewRNN_Embed_Classifier(num_features=len(vectorizer.review_vocab), num_classes=1, rnn_hidden_size=200,
-#                 embedding_file_name=args.embedding_file_name, embedding_dim=args.embedding_dim,  
-#                 word_to_index=vectorizer.review_vocab._token_to_idx, max_idx=len(vectorizer.review_vocab),
-#                 freeze=True, batch_norm=True, dropout=True, activation_fn='RELU')
-# args.architecture_type = 'RNN'
+classifier = SurnameRNN_Embed_Classifier(num_features=len(vectorizer.surname_vocab), 
+                num_classes=len(vectorizer.nationality_vocab), rnn_hidden_size=200,
+                embedding_file_name=args.embedding_file_name, embedding_dim=args.embedding_dim,  
+                word_to_index=vectorizer.surname_vocab._token_to_idx, max_idx=len(vectorizer.surname_vocab),
+                freeze=True, batch_norm=True, dropout=True, activation_fn='RELU')
+args.architecture_type = 'RNN'
 
 
 args.classifier = classifier

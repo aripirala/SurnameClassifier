@@ -193,8 +193,8 @@ class SurnameVectorizer(object):
             index = self.surname_vocab.lookup_token(token) # get index for the token from the vocab class
             token_ids[id+1] = index
         token_ids[id+1] = self.surname_vocab.end_seq_index
-        len_vector = id+2 # length of surname vector including begin and end tokens
-        return token_ids, len_vector
+        vector_len = id+2 # length of surname vector including begin and end tokens
+        return token_ids, vector_len
     
     def vectorize_onehot(self, surname):
         #TODO: need to refactor to handle new SequenceVocabulary Class

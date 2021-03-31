@@ -53,7 +53,7 @@ class Embedding:
         
         self.embedding_dim= embedding_dim
 
-        if embedding_type is not None:
+        if embedding_type == 'pre-trained':
             self.emb_matrix = self.create_embedding_matrix(embedding_file_name, word_to_index, max_idx)
             self.embedding = nn.Embedding.from_pretrained(torch.from_numpy(self.emb_matrix), freeze=freeze)
             print(f'Embeddings loaded - shape is {self.emb_matrix.shape}')
@@ -234,7 +234,7 @@ class SurnameRNN_Embed_Classifier(Embedding, nn.Module):
 
         y_out, _ = self.rnn(x_embed.float())
 
-        # print(f'cnn output shape is {cnn_output.size()}')
+        # print(f'rnn output shape is {y_out.size()}')
         # print(f'x_lengths shape is {x_lengths.size()}')
         if x_lengths is not None:
             y_out = column_gather(y_out, x_lengths)
